@@ -187,10 +187,10 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Admin panel:", reply_markup=ReplyKeyboardMarkup(ADMIN_MENU, resize_keyboard=True))
 
     elif state == "awaiting_new_mac":
+        # Update MAC address for Wake-on-LAN
+        from dotenv import set_key
         global PC_MAC
         PC_MAC = text.strip()
-        # Update .env file
-        from dotenv import set_key
         set_key('.env', 'PC_MAC', PC_MAC)
         await update.message.reply_text(f"MAC address updated to {PC_MAC}")
         user_state[chat_id] = "admin"
