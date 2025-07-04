@@ -32,8 +32,8 @@ sudo apt install python3-venv python3-pip wakeonlan
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/raspberry-admin-bot.git
-   cd raspberry-admin-bot
+   git clone https://github.com/Empty-name/raspberry_tg_bot.git
+   cd raspberry_tg_bot
    ```
 
 2. Run the automatic installation:
