@@ -28,27 +28,27 @@ sudo apt update
 sudo apt install python3-venv python3-pip wakeonlan
 ```
 
-## 🛠 Быстрая установка (автоматизация)
+## 🛠 Fast Installation (Recommended)
 
-1. Клонируйте репозиторий:
+1. Clone the repository:
    ```bash
    git clone https://github.com/yourusername/raspberry-admin-bot.git
    cd raspberry-admin-bot
    ```
 
-2. Запустите автоматическую установку:
+2. Run the automatic installation:
    ```bash
    chmod +x install.sh
    ./install.sh
    ```
-   Скрипт сам:
-   - Проверит и установит зависимости
-   - Попросит ввести токен бота, MAC-адрес ПК, ваш Telegram ID и username
-   - Создаст .env и базу пользователей, добавит вас как админа
-   - Настроит автозапуск через systemd
-   - Покажет CLI-меню для управления ботом (старт/стоп/статус)
+   The script will:
+   - Check and install all dependencies
+   - Ask for your bot token, PC MAC address, and your Telegram username
+   - Create the .env file and user database, add you as admin
+   - Set up autostart via systemd
+   - Show a CLI menu for bot management (start/stop/status)
 
-3. Пример файла настроек `.env.example`:
+3. Example `.env.example` file:
    ```env
    TOKEN=""
    PC_MAC=""
@@ -57,20 +57,20 @@ sudo apt install python3-venv python3-pip wakeonlan
 
 ---
 
-## 🛠 Ручная установка (альтернатива)
+## 🛠 Manual Installation
 
-1. Создайте .env по примеру выше и заполните свои данные.
-2. Создайте виртуальное окружение и установите зависимости:
+1. Create a .env file as shown above and fill in your data.
+2. Create a virtual environment and install dependencies:
    ```bash
    python3 -m venv venv
    source venv/bin/activate
    pip install python-telegram-bot==20.7 wakeonlan python-dotenv
    ```
-3. Запустите бота:
+3. Start the bot:
    ```bash
    ./venv/bin/python rbp_bot.py
    ```
-4. Для автозапуска используйте:
+4. For autostart use:
    ```bash
    chmod +x setup_start.sh
    ./setup_start.sh
@@ -78,7 +78,7 @@ sudo apt install python3-venv python3-pip wakeonlan
 
 ## 🧾 File Structure
 
-- `mybot.py` — main bot logic and user role management
+- `rbp_bot.py` — main bot logic and user role management
 - `setup_start.sh` — script that sets up auto-start on boot
 - `users.db` — created automatically on first run
 - `venv/` — virtual environment
