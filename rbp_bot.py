@@ -1,11 +1,11 @@
 import sqlite3
 import logging
-import paramiko
 import os
+from logging import captureWarnings
+
 from dotenv import load_dotenv
 from telegram import Update, ReplyKeyboardMarkup
 from subprocess import run, check_output
-import platform
 from telegram.ext import (
     Application, CommandHandler, MessageHandler,
     filters, ContextTypes
@@ -20,7 +20,6 @@ PC_IP = os.getenv("PC_IP")
 PC_SSH_USER = os.getenv("PC_SSH_USER")
 PC_SSH_PASS = os.getenv("PC_SSH_PASS")
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
-PARAM_OS = "w" if platform.system().lower() == "windows" else "l"
 
 # --- Menu definitions ---
 MAIN_MENU = [["💻 PC control", "🌐 IP address"],
@@ -94,58 +93,26 @@ def change_role(username, new_role):
     conn.close()
     return True
 
-async def ping_pc():
-    global PC_IP
-    try:
-        ping_cmd = ["ping", "-c", "3", PC_IP]
-        ping = check_output(ping_cmd, shell=True).decode().strip()
-        return "100%" not in ping
-    except Exception as e:
-        logger.error(f"Error pinging PC: {e}")
-        return False
+def ping_pc():
+    global PC_IP, PC_SSH_PASS, PC_SSH_USER
+    result = subprocess.run(["ssh_pc", PC_IP, PC_SSH_USER, PC_SSH_PASS], captureOutput=True, text=True).stdout
+    return int(result)
 
-async def handle_pc(update: Update, action: str, pc_on: bool):
-    global PC_IP, PC_MAC
-    if action == "on":
-        if pc_on:
-            await update.message.reply_text("PC is already on.")
-            return
-        else:
-            run(["wakeonlan", PC_MAC])
-            await update.message.reply_text("PC is being turned on.")
-            return
-    else:
-        if not pc_on:
-            await update.message.reply_text("PC is already off or unreachable.")
-            return
-        else:
-            run(["wakeonlan", "-p", "off", PC_MAC])
-            await update.message.reply_text("PC is being turned off.")
-            return
+def pc_on():
+    global PC_IP, PC_SSH_PASS, PC_SSH_USER
+    result = subprocess.run(["pc_on", PC_MAC, PC_IP], captureOutput=True, text=True).stdout
+    return int(result)
 
-async def handle_pc_uptime(update: Update, pc_on: bool):
-    global PC_IP, PC_SSH_PASS, PC_SSH_USER, PARAM_OS
-    if not pc_on:
-        await update.message.reply_text("PC is off or unreachable.")
-        return
-    try:
-        if not (PC_IP and PC_SSH_USER and PC_SSH_PASS):
-            await update.message.reply_text("⛔ Set PC_IP, PC_SSH_USER or PC_SSH_PASS variables in .env")
-            return
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(PC_IP, username=PC_SSH_USER, password=PC_SSH_PASS)
-        if PARAM_OS == "w":
-            stdin, stdout, stderr = ssh.exec_command('systeminfo | findstr /C:"System Boot Time"')
-            uptime = stdout.read().decode().strip()
-        else:
-            stdin, stdout, stderr = ssh.exec_command('uptime -p')
-            uptime = stdout.read().decode().strip()
-        ssh.close()
-        await update.message.reply_text(f"PC uptime is: {uptime}")
-    except Exception as e:
-        logger.error(f"Error getting PC uptime: {e}")
-        await update.message.reply_text("⛔ Error getting PC uptime.")
+def pc_off():
+    global PC_IP, PC_SSH_PASS, PC_SSH_USER
+    result = subprocess.run(["pc_off", PC_MAC, PC_IP], captureOutput=True, text=True).stdout
+    return int(result)
+
+async def handle_pc_uptime():
+    global PC_IP, PC_SSH_PASS, PC_SSH_USER
+    CMD = "systeminfo | findstr /C:\"System Boot Time\""
+    result = subprocess.run(["ssh_pc", PC_IP, PC_SSH_USER, PC_SSH_PASS, CMD], captureOutput=True, text=True).stdout
+    return result
 
 
 # --- Command /start ---
@@ -197,13 +164,35 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("Admin panel:", reply_markup=ReplyKeyboardMarkup(ADMIN_MENU, resize_keyboard=True))
 
     elif state == "pc_control":
-        pc_on = await ping_pc()
+        pc_status = await ping_pc()
         if text == "💻 Turn on PC":
-            await handle_pc(update, 'on', pc_on)
+            if pc_status == 1:
+                await update.message.reply_text("✅PC is already on.")
+            else:
+                res = await pc_on()
+                if res == 1:
+                    await update.message.reply_text("✅PC has been successfully on.")
+                else:
+                    await update.message.reply_text("⚠️ Failed to turn on PC.")
         elif text == "💻 Turn off PC":
-            await handle_pc(update, 'off', pc_on)
+            if pc_status == 0:
+                await update.message.reply_text("✅PC is already off.")
+            else:
+                res = await pc_off()
+                if res == 1:
+                    await update.message.reply_text("✅PC has been successfully off.")
+                else:
+                    await update.message.reply_text("⚠️ Failed to turn off PC.")
         elif text == "🕒 Uptime":
-            await handle_pc_uptime(update, pc_on)
+            if pc_status == 0:
+                await update.message.reply_text("⚠️ PC is off, cannot get uptime.")
+                return
+            res = handle_pc_uptime()
+            if res == 0:
+                await update.message.reply_text("⚠️ Failed to get uptime.")
+                return
+            #РЕАЛИЗОВАТЬ АЙПТАЙМ ДЛЯ ПК И ВЫВЕСТИ В ОТДЕЛЬНУЮ ФУНКЦИЮ
+            await update.message.reply_text("🕒 Uptime is ")
         elif text == "🔙 Back":
             user_state[chat_id] = "main"
             await update.message.reply_text("Main menu:", reply_markup=ReplyKeyboardMarkup(MAIN_MENU, resize_keyboard=True))

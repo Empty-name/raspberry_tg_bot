@@ -17,8 +17,8 @@ function check_dep() {
 check_dep python3
 check_dep python3-venv
 check_dep python3-pip
+check_dep sshpass
 check_dep wakeonlan
-check_dep paramiko
 
 # Create virtual environment
 if [ ! -d "venv" ]; then
@@ -65,6 +65,89 @@ END
 # Make setup_start.sh executable and run it
 chmod +x setup_start.sh
 ./setup_start.sh
+
+# Создание исполняемых скриптов для управления ПК
+cat <<'EOF' > ssh_pc
+#!/bin/bash
+# Проверка SSH подключения
+if [ $# -lt 3 ]; then
+  echo "0"
+  exit 1
+fi
+PC_IP="$1"
+PC_SSH_USER="$2"
+PC_SSH_PASS="$3"
+CMD="${4:-exit 0}"
+if command -v sshpass >/dev/null 2>&1; then
+  sshpass -p "$PC_SSH_PASS" ssh -o ConnectTimeout=7 -o StrictHostKeyChecking=no "$PC_SSH_USER@$PC_IP" "$CMD"
+  if [ $? -eq 0 ]; then
+    echo "1"
+    exit 0
+  else
+    echo "0"
+    exit 1
+  fi
+else
+  echo "0"
+  exit 1
+fi
+EOF
+chmod +x ssh_pc
+
+cat <<'EOF' > pc_on
+#!/bin/bash
+# Включение ПК через Wake-on-LAN и проверка пинга
+if [ $# -ne 2 ]; then
+  echo "0"
+  exit 1
+fi
+PC_MAC="$1"
+PC_IP="$2"
+wakeonlan "$PC_MAC"
+for i in {1..10}; do
+  sleep 2
+  ping -c 1 -W 1 "$PC_IP" >/dev/null 2>&1
+  if [ $? -eq 0 ]; then
+    echo "1"
+    exit 0
+  fi
+done
+echo "0"
+exit 1
+EOF
+chmod +x pc_on
+
+cat <<'EOF' > pc_off
+#!/bin/bash
+# Выключение ПК через SSH и проверка пинга
+if [ $# -ne 4 ]; then
+  echo "0"
+  exit 1
+fi
+PC_MAC="$1"
+PC_IP="$2"
+PC_SSH_USER="$3"
+PC_SSH_PASS="$4"
+if ! command -v sshpass >/dev/null 2>&1; then
+  echo "0"
+  exit 1
+fi
+sshpass -p "$PC_SSH_PASS" ssh -o ConnectTimeout=7 -o StrictHostKeyChecking=no "$PC_SSH_USER@$PC_IP" 'shutdown /s /t 0' || {
+  echo "0"
+  exit 1
+}
+for i in {1..10}; do
+  sleep 2
+  ping -c 1 -W 1 "$PC_IP" >/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo "1"
+    exit 0
+  fi
+done
+echo "0"
+exit 1
+EOF
+chmod +x pc_off
 
 # CLI menu for bot management
 while true; do
