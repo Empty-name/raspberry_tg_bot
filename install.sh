@@ -18,6 +18,7 @@ check_dep python3
 check_dep python3-venv
 check_dep python3-pip
 check_dep wakeonlan
+check_dep paramiko
 
 # Create virtual environment
 if [ ! -d "venv" ]; then
@@ -27,17 +28,23 @@ source venv/bin/activate
 
 # Install python dependencies
 pip install --upgrade pip
-pip install python-telegram-bot==20.7 wakeonlan python-dotenv
+pip install python-telegram-bot==20.7 wakeonlan python-dotenv paramiko
 
 # Request user settings
-read -p "Enter Telegram Bot Token: " TOKEN
-read -p "Enter PC MAC address for Wake-on-LAN: " PC_MAC
-read -p "Enter your Telegram username (without @): " ADMIN_USERNAME
+read -r -p "Enter Telegram Bot Token: " TOKEN
+read -r -p "Enter PC MAC address for Wake-on-LAN: " PC_MAC
+read -r -p "Enter PC local IP address for Wake-on-LAN: " PC_IP
+read -r -p "Enter ssh User for PC services: " PC_SSH_USER
+read -r -p "Enter ssh User's password for PC services: " PC_SSH_PASS
+read -r -p "Enter your Telegram username (without @): " ADMIN_USERNAME
 
 # Create .env file
 cat <<EOF > .env
 TOKEN="$TOKEN"
 PC_MAC="$PC_MAC"
+PC_IP="$PC_IP"
+PC_SSH_USER = "$PC_SSH_USER"
+PC_SSH_PASS = "$PC_SSH_PASS"
 ADMIN_USERNAME="$ADMIN_USERNAME"
 EOF
 
