@@ -95,23 +95,23 @@ def change_role(username, new_role):
 
 def ping_pc():
     global PC_IP, PC_SSH_PASS, PC_SSH_USER
-    result = subprocess.run(["ssh_pc", PC_IP, PC_SSH_USER, PC_SSH_PASS], captureOutput=True, text=True).stdout
+    result = run(["ssh_pc", PC_IP, PC_SSH_USER, PC_SSH_PASS], captureOutput=True, text=True).stdout
     return int(result)
 
 def pc_on():
     global PC_IP, PC_SSH_PASS, PC_SSH_USER
-    result = subprocess.run(["pc_on", PC_MAC, PC_IP], captureOutput=True, text=True).stdout
+    result = run(["pc_on", PC_MAC, PC_IP], captureOutput=True, text=True).stdout
     return int(result)
 
 def pc_off():
     global PC_IP, PC_SSH_PASS, PC_SSH_USER
-    result = subprocess.run(["pc_off", PC_MAC, PC_IP], captureOutput=True, text=True).stdout
+    result = run(["pc_off", PC_MAC, PC_IP], captureOutput=True, text=True).stdout
     return int(result)
 
 async def handle_pc_uptime():
     global PC_IP, PC_SSH_PASS, PC_SSH_USER
     CMD = "systeminfo | findstr /C:\"System Boot Time\""
-    result = subprocess.run(["ssh_pc", PC_IP, PC_SSH_USER, PC_SSH_PASS, CMD], captureOutput=True, text=True).stdout
+    result = run(["ssh_pc", PC_IP, PC_SSH_USER, PC_SSH_PASS, CMD], captureOutput=True, text=True).stdout
     return result
 
 
@@ -126,7 +126,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # --- Main text handler ---
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global PC_MAC, PC_IP, PARAM_OS
+    global PC_MAC, PC_IP
     username = update.effective_user.username
     chat_id = update.effective_chat.id
     text = update.message.text.strip()
@@ -278,3 +278,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
