@@ -196,11 +196,13 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         elif text == "🔙 Back":
             user_state[chat_id] = "main"
             await update.message.reply_text("Main menu:", reply_markup=ReplyKeyboardMarkup(MAIN_MENU, resize_keyboard=True))
+            return
 
     elif state == "admin":
         if text == "🔙 Back":
             user_state[chat_id] = "main"
             await update.message.reply_text("Main menu:", reply_markup=ReplyKeyboardMarkup(MAIN_MENU, resize_keyboard=True))
+            return
         elif text == "➕ Add user":
             user_state[chat_id] = "awaiting_add_username"
             await update.message.reply_text("Enter the username of the new user:")
@@ -278,4 +280,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
